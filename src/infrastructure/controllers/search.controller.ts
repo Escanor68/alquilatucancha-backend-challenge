@@ -1,8 +1,8 @@
 import { Controller, Get, Query, UsePipes } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import * as moment from 'moment';
 import { createZodDto, ZodValidationPipe } from 'nestjs-zod';
 import { z } from 'nestjs-zod/z';
+import { parse, isValid } from 'date-fns';
 
 import {
   ClubWithAvailability,
@@ -13,16 +13,16 @@ const GetAvailabilitySchema = z.object({
   placeId: z.string(),
   date: z
     .string()
-    .regex(/\d{4}-\d{2}-\d{2}/)
-    .refine((date) => moment(date).isValid())
-    .transform((date) => moment(date).toDate()),
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine((date) => isValid(parse(date, 'yyyy-MM-dd', new Date())))
+    .transform((date) => parse(date, 'yyyy-MM-dd', new Date())),
 });
 
 class GetAvailabilityDTO extends createZodDto(GetAvailabilitySchema) {}
 
 @Controller('search')
 export class SearchController {
-  constructor(private queryBus: QueryBus) {}
+  constructor(private readonly queryBus: QueryBus) {}
 
   @Get()
   @UsePipes(ZodValidationPipe)
